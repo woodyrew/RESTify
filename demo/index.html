@@ -1,0 +1,54 @@
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+
+<script type="text/javascript" >
+$(document).ready(function(){
+
+	function REST_caller(args){
+
+		this.action = (args.action != undefined) ? args.action : 'GET';
+		this.resource = (args.resource != undefined) ? args.resource : '';
+		this.query = (args.query != undefined) ? args.query : '';
+		
+		var done = (args.done != undefined) ? args.done : '';
+
+		this.doSend = function(){
+			$.ajax({
+				url: this.resource, data: this.query, type: this.action,
+				complete: function(xhr){ if(done != '') done(xhr); }
+			});
+		}
+		this.get = function(){
+			this.action = 'GET';
+			this.doSend();
+		}
+		this.post = function(){
+			this.action = 'POST';
+			this.doSend();
+		}
+		this.put = function(){
+			this.action = 'PUT';
+			this.doSend();
+		}
+		this.delete = function(){
+			this.action = 'DELETE';
+			this.doSend();
+		}
+	}
+
+	new REST_caller({
+		resource: 'http://localhost/restify/demo/restful_ep.php/075389',
+		query: {
+			'name': 'new name',
+			'rand_data': 'another new data'
+		},
+		done: function(xhr){
+			var Response;
+			if(xhr.responseText != undefined) Response = xhr.responseText;
+			$("#container").html(Response);
+		}
+	}).get();
+
+});
+</script>
+
+<div id="container"></div>

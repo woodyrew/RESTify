@@ -146,12 +146,17 @@ What is an Endpoint class?
 
 You might be confused about the **Endpoint Class** that I have been mentioning (alot). It is the name I call to classes that extends the **[Restify Class](#restify-class)**. It consists of 4 (four) required methods:
 
-* onGet
-* onPost
-* onPut
-* onDelete
+* `onGet()`
+* `onPost()`
+* `onPut()`
+* `onDelete()`
 
 these methods need only one parameter (though not required) to read the input or query sent by the HTTP request. You can optionally return a value which in turn be passed down to the respective [Restify::endpoint()](#endpoint) called.
+
+What is a RESTified Resource?
+---
+
+A URI where you can do RESTful requests (`GET`,`POST`,`PUT`,`DELETE`) and execute respective actions based on the *[Endpoint Class](#what-is-an-endpoint-class)* called within that resource.
 
 [what-is-a-resource]: http://en.wikipedia.org/wiki/Resource_%28Web%29
 [what-are-clean-urls]: http://en.wikipedia.org/wiki/Clean_URL

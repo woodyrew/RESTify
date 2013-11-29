@@ -2,14 +2,13 @@
 
 include 'rurl_mapper.php';
 
-define('ENDPOINT_DIR', dirname(__FILE__) . '/endpoints');
-
 abstract class Restify {
 
 	abstract public function onGet($data);
 	abstract public function onPost($data);
 	abstract public function onPut($data);
 	abstract public function onDelete($data);
+	static public $endpoint_dir = null;
 
 	public function __construct(){
 
@@ -69,11 +68,18 @@ abstract class Restify {
 	}
 
 	static public function endpoint($EP_Class){
-		$EP_File = ENDPOINT_DIR . '/' . $EP_Class . '.php';
-		if(! file_exists($EP_File)) die('Cannot find EndPoint class');
+
+		if(self::$endpoint_dir == false) die('Set endpoint directory');
+
+		$EP_File = self::$endpoint_dir . '/' . $EP_Class . '.php';
+		if(! file_exists($EP_File)) die('Cannot find EndPoint class ' . $EP_file);
 		include $EP_File;
 		$EP_object = new $EP_Class;
 		return $EP_object->doAction();
+	}
+
+	static public function set_endpoint_dir($dir) {
+		self::$endpoint_dir = $dir;
 	}
 
 }

@@ -73,8 +73,8 @@ class scripts {
 
 ### Access
 To access the [resource][what-is-a-resource], the path would be something like:
-```mydomain.com/api/book/serial/12fds3```
-That would get routed to the get command.
+ > http://example.com/api/book/serial/12fds3
+That would get routed to the *get* method.
 
 **Note:** *the [Clean url][what-are-clean-urls]*
 

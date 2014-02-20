@@ -1,137 +1,106 @@
-# RESTify class
----
+# PHP RestMe class
 
-an abstract class that ['RESTifies'][what-is-rest] a resource, function, or class method.
+A php class that ['RESTifies'][what-is-rest] provides the ability to write REST api's in PHP.
 
-### endpoint()
+The inspiration was from the [node-restify](https://github.com/mcavage/node-restify) and frustration that I couldn't find an equivilent in PHP.
 
-  ['RESTifies'][what-is-rest] the function, method or resource that uses it.
+It's designed to be compatible with Backbone's built in [sync](http://backbonejs.org/#Sync) and allows for the [emulateHTTP](http://backbonejs.org/#Sync-emulateHTTP) swtich.
 
-  * @access public
-  * @param string **action**
-  * @return mixed
-  
+## Usage
 
-### rurl_mapper()
+### Routing
+./api/book.php
+```php
+<?php
 
-  a protected method that returns a RURL_mapper object.
-  
-  * @access protected
-  * @return *[RURL_mapper](#rurl_mapper-class)* object
+include '../global/libraries/restme/restme.inc.php';
 
+$restme = new Restme();
 
-### RURL_mapper class
----
+$restme->get('book/serial/:id', 'get');
+$restme->get('book/serial', 'get_all');
+$restme->post('book/serial', 'add');
+$restme->put('book/serial/:id', 'edit');
+$restme->delete('book/serial/:id', 'remove');
 
-used to map *[RESTful URLs](#what-are-restful-urls)*
+$restme->response(); // Will be json encoded with appropriate headers
+```
 
-  
-##### query()
-  
-  sets the query property to map. 
-    
-  * @access public
-  * @param array data
-  * @return void
-  
+The first parameter of the get, post, put and delete is the 'route'.  This doesn't include the directory the file is in, e.g. if the path to your file was ./my/awesome/api/book.php you would put the route to be 'book/some_resource'.
 
-Sample Usage:
+[Read about resources here.][what-is-a-resource]
+
+The second parameter is a string name of the endpoint method, this file should be located in an endpoints directory relative to the routes file.
 
 
-    // ..previous code
-    
-    $resource = 'http://example.com/some-rand-segment/anthr-rand-segment/products/17';
-    
-    $resource = parse_url($resource);
-    
-    $request_uri = $resource['path'];
-    
-    $uri_array = trim(explode('/', $request_uri), '/');
-    
-    $this->rurlm->query($uri_array);
+### Endpoints class file
+./api/endpoints/book.inc.php
+```php
+<?php
 
-    // next code..
-    
-  
-##### map()
- 
-  maps the query property
-    
-  * @access public
-  * @param array data
-  * @return array
-  
+class scripts {
 
-Sample Usage:
+	protected function process_request ($pa_route_params, $pa_params, $ps_method) {
+		$la_rtn = array(
+			'route_params' => $pa_route_params
+		  , 'request_params' => $pa_params
+		);
+		$la_rtn['method'] = $ps_method;
+		return $la_rtn;
+	}
+	
+	public function get ($pa_route_params, $pa_params) {
+		return process_request($pa_route_params, $pa_params, 'get');
+	}
+	
+	public function get_all ($pa_route_params, $pa_params) {
+		return process_request($pa_route_params, $pa_params, 'get_all');
+	}
+	
+	public function add ($pa_route_params, $pa_params) {
+		return process_request($pa_route_params, $pa_params, 'add');
+	}
+	
+	public function edit ($pa_route_params, $pa_params) {
+		return process_request($pa_route_params, $pa_params, 'edit');
+	}
+	
+	public function remove ($pa_route_params, $pa_params) {
+		return process_request($pa_route_params, $pa_params, 'remove');
+	}
+}
+```
+
+### Access
+To access the [resource][what-is-a-resource], the path would be something like:
+```mydomain.com/api/book/serial/12fds3```
+That would get routed to the get command.
+
+**Note:** *the [Clean url][what-are-clean-urls]*
+
+## FAQ
+
+### My server's not setup for PUT and DELETE
+You're not alone.
+
+You can still provide PUT and DELETE via POST with a custom header X-HTTP-Method-Override.
+e.g.
+```
+X-HTTP-Method=POST
+X-HTTP-Method-Override=PUT
+```
+
+### I need to provide version of my api!
+No worries, just declare your route like this:
+```php
+$restme->post(array('path' => 'book/serial', 'version' => '1.0.0', 'script_add_v1');
+```
+**Note:** *At the moment it uses strict matching but will provide fuzzy matching like '1.x'.*
 
 
-    // ..previous code
-    $data = array(
-      '0'=>'just-another-segment',
-      '1'=>'just-another-segment',
-      '2'=>'category',
-      '3'=>'id'
-    );
-    
-    $mapped_data = $this->rurlm->map($data);
-    
-    print_r($mapped_data);
-    // next code..
-    
-  
-Result:
-  
-  
-    Array(
-      'just-another-segment' => Array(
-        'some-rand-segment',
-        'anthr-rand-segment'
-      ),
-      'category' => 'products',
-      'id' => '17'
-    );
+### What are [RESTful URLs][what-are-clean-urls]?
 
-
-HOW TO:
----
-
-* Create an *[Endpoint class](#what-is-an-endpoint-class)*
-        
-
-        class My_Endpoint extends Restify {
-        
-          public function onGet($data = null){
-            // GET method
-          }
-          public function onPost($data = null){
-            // POST method
-          }
-          public function onPut($data = null){
-            // PUT method
-          }
-          public function onDelete($data = null){
-            // DELETE method
-          }
-        
-        }
-
-* Apply the endpoint to a function or method.
-
-        // ..previous code
-        
-          Restify::endpoint('My_Endpoint');
-        
-        // next code..
-
-* Send some "actions" to the [RESTified][what-is-rest] [Resource][what-is-a-resource]!
-
-        GET /active_endpoint HTTP/1.1
-        Host: example.com
-
-What are [RESTful URLs][what-are-clean-urls]?
----
-
-also known as Clean URLs, are purely structural URLs that do not contain a query string and instead contain only the path of the [Resource][what-is-a-resource]
+Also known as Clean URLs, are purely structural URLs that do not contain a query string and instead contain only the path of the [Resource][what-is-a-resource]
 
   an example of a clean url
   > http://example.com/some-rand-segment/anthr-rand-segment/products/17
@@ -139,24 +108,8 @@ also known as Clean URLs, are purely structural URLs that do not contain a query
   which is equivalent to..
   > http://example.com/some-rand-segment/anthr-rand-segment/?category=products&id=17
      
-  The problem is the global variable *$_GET* wont recognize */products* and */17* as *category* and *id* respectively. **Restify** is capable of mapping these *[RESTful URLs](#what-are-restful-urls)* using *[RURL_mapper class](#rurl_mapper-class)*.
+  The problem is the global variable *$_GET* wont recognize */products* and */17* as *category* and *id* respectively. **RestMe** is capable of mapping these *[RESTful URLs](#what-are-restful-urls)* - good times.
   
-What is an Endpoint class?
----
-
-You might be confused about the **Endpoint Class** that I have been mentioning (alot). It is the name I call to classes that extends the **[Restify Class](#restify-class)**. It consists of 4 (four) required methods:
-
-* `onGet()`
-* `onPost()`
-* `onPut()`
-* `onDelete()`
-
-these methods need only one parameter (though not required) to read the input or query sent by the HTTP request. You can optionally return a value which in turn be passed down to the respective [Restify::endpoint()](#endpoint) called.
-
-What is a RESTified Resource?
----
-
-A URI where you can do RESTful requests (`GET`,`POST`,`PUT`,`DELETE`) and execute respective actions based on the *[Endpoint Class](#what-is-an-endpoint-class)* called within that resource.
 
 [what-is-a-resource]: http://en.wikipedia.org/wiki/Resource_%28Web%29
 [what-are-clean-urls]: http://en.wikipedia.org/wiki/Clean_URL

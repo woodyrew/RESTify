@@ -1,8 +1,9 @@
 # PHP RestMe class
 
-A php class that ['RESTifies'][what-is-rest] provides the ability to write REST api's in PHP.
+A php class that ['RESTifies'][what-is-rest] a [resource][what-is-a-resource], thus providing the ability to write RESTful api's in PHP.
 
 The inspiration was from the [node-restify](https://github.com/mcavage/node-restify) and frustration that I couldn't find an equivilent in PHP.
+Forked from [kapitanluffy/RESTify](https://github.com/kapitanluffy/RESTify) however it now works more like [node-restify](https://github.com/mcavage/node-restify) than the original project.
 
 It's designed to be compatible with Backbone's built in [sync](http://backbonejs.org/#Sync) and allows for the [emulateHTTP](http://backbonejs.org/#Sync-emulateHTTP) swtich.
 

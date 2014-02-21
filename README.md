@@ -39,7 +39,7 @@ The second parameter is a string name of the endpoint method, this file should b
 ```php
 <?php
 
-class scripts {
+class example {
 
 	protected function process_request ($pa_route_params, $pa_params, $ps_method) {
 		$la_rtn = array(

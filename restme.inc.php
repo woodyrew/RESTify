@@ -13,7 +13,7 @@ class Restme {
 		array_pop($la_script_name);
 		$ls_script_name = implode('.', $la_script_name);
 
-		$ls_endpoint_file_path = './endpoints/' . $ls_script_name . '.inc.php';
+		$ls_endpoint_file_path = './endpoint/' . $ls_script_name . '.inc.php';
 		if (!file_exists($ls_endpoint_file_path)) {
 			header('HTTP/1.1 500 Internal Server Error');
 			die(json_encode(array('error' => array("Cannot find corresponding endpoint file: $ls_endpoint_file_path")))); // Convert to json 

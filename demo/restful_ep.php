@@ -1,9 +1,13 @@
 <?php
 
-include '../restify.php';
+include '../restme.inc.php';
 
-RESTify::set_endpoint_dir('endpoints');
+$restme = new Restme();
 
-Restify::endpoint('myendpoint');
+$restme->get('book/serial/:id', 'get');
+$restme->get('book/serial', 'get_all');
+$restme->post('book/serial', 'add');
+$restme->put('book/serial/:id', 'edit');
+$restme->delete('book/serial/:id', 'remove');
 
-?>
+$restme->response(); // Will be json encoded with appropriate headers

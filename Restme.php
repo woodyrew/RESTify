@@ -15,7 +15,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-class Restme {
+namespace Restme;
+
+class Http {
 
 	private $endpoints = array();
 	private $route_params = array();

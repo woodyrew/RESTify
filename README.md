@@ -14,9 +14,9 @@ It's designed to be compatible with Backbone's built in [sync](http://backbonejs
 ```php
 <?php
 
-include '../global/libraries/restme/restme.inc.php';
+include '../lib/Restme.php';
 
-$restme = new Restme();
+$restme = new Restme\http();
 
 $restme->get('book/serial/:id', 'get');
 $restme->get('book/serial', 'get_all');
@@ -39,7 +39,7 @@ The second parameter is a string name of the endpoint method, this file should b
 ```php
 <?php
 
-class example {
+class book {
 
 	protected function process_request ($pa_route_params, $pa_params, $ps_method) {
 		$la_rtn = array(

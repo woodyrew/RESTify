@@ -16,7 +16,7 @@ It's designed to be compatible with Backbone's built in [sync](http://backbonejs
 
 include '../lib/Restme.php';
 
-$restme = new Restme\http();
+$restme = new Restme\Http();
 
 $restme->get('book/serial/:id', 'get');
 $restme->get('book/serial', 'get_all');
@@ -39,6 +39,8 @@ The second parameter is a string name of the endpoint method, this file should b
 ```php
 <?php
 
+namespace RestmeEndpoint;
+
 class book {
 
 	protected function process_request ($pa_route_params, $pa_params, $ps_method) {
@@ -51,23 +53,23 @@ class book {
 	}
 	
 	public function get ($pa_route_params, $pa_params) {
-		return process_request($pa_route_params, $pa_params, 'get');
+		return $this->process_request($pa_route_params, $pa_params, 'get');
 	}
 	
 	public function get_all ($pa_route_params, $pa_params) {
-		return process_request($pa_route_params, $pa_params, 'get_all');
+		return $this->process_request($pa_route_params, $pa_params, 'get_all');
 	}
 	
 	public function add ($pa_route_params, $pa_params) {
-		return process_request($pa_route_params, $pa_params, 'add');
+		return $this->process_request($pa_route_params, $pa_params, 'add');
 	}
 	
 	public function edit ($pa_route_params, $pa_params) {
-		return process_request($pa_route_params, $pa_params, 'edit');
+		return $this->process_request($pa_route_params, $pa_params, 'edit');
 	}
 	
 	public function remove ($pa_route_params, $pa_params) {
-		return process_request($pa_route_params, $pa_params, 'remove');
+		return $this->process_request($pa_route_params, $pa_params, 'remove');
 	}
 }
 ```

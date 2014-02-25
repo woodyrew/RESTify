@@ -18,14 +18,22 @@ limitations under the License.
 namespace Restme;
 
 class Http {
-
 	private $endpoints = array();
 	private $route_params = array();
 	private $error = array();
 
+	// Add all the variables used in the class.
+
+	/**
+	 * Sets the variables up for the request made
+	 *
+	 * @return Void
+	 */
 	public function __construct () {
+		// Split out endpoint class
 		$la_script_path = explode('/', $_SERVER['SCRIPT_NAME']);
 		$la_script_name = array_pop($la_script_path);
+		//
 		$la_script_name = explode('.', $la_script_name);
 		array_pop($la_script_name);
 		$ls_script_name = implode('.', $la_script_name);
@@ -36,7 +44,8 @@ class Http {
 			die(json_encode(array('error' => array("Cannot find corresponding endpoint file: $ls_endpoint_file_path")))); // Convert to json 
 		}
 		include $ls_endpoint_file_path;
-		$this->endpoint_class = new $ls_script_name;
+		//
+		$this->endpoint_class = new RestmeEndpoint\$ls_script_name;
 
 		$this->method = strtoupper($_SERVER['REQUEST_METHOD']);
 		$this->true_method = (!empty($_SERVER['X-HTTP-Method-Override'])) ? strtoupper($_SERVER['X-HTTP-Method-Override']) : $this->method;
@@ -52,6 +61,11 @@ class Http {
 		$this->url_parts = $la_request_uri;
 	}
 
+	/**
+	 * Gets the appropriate query according to the method called
+	 *
+	 * @return [array]
+	 */
 	protected function get_query () {
 		switch ($this->method) {
 			case 'GET':
@@ -63,10 +77,16 @@ class Http {
 				break;
 
 			case 'DELETE':
-				case 'PUT':
-				$request_body = @file_get_contents('php://input', 'r');
-				parse_str($request_body, $_PUT);
-				return $_PUT;
+			case 'PUT':
+				// emulateHTTP is in use
+				if ($this->true_method !== $this->method) {
+					return $_POST;
+				}
+				else {
+					$request_body = @file_get_contents('php://input', 'r');
+					parse_str($request_body, $_PUT);
+					return $_PUT;
+				}
 				break;
 
 			default:
@@ -75,6 +95,11 @@ class Http {
 		}
 	}
 
+	/**
+	 * Adds an error to the stack for if there's an error.
+	 *
+	 * @return Void
+	 */
 	protected function add_error ($ps_error_message) {
 		array_push($this->error, $ps_error_message);
 	}
@@ -141,15 +166,31 @@ class Http {
 		
 		if (empty($ps_method) || empty($pm_route) || (is_array($pm_route) && empty($pm_route['path'])) || empty($ps_endpoint)) {
 			
-			$this->add_error("Could not add route; method: $ps_method, route: " . print_r($pm_route, true) . ", endpoint: $ps_endpoint;");
+			$this->add_error(array(
+				"Could not add route; parameter empty" => array(
+					'ps_method' => $ps_method
+				  , 'pm_route' => $pm_route
+				  , 'ps_endpoint' => $ps_endpoint
+				)
+			));
 			return false;
 		}
-
 
 		if (is_array($pm_route)) {
 			// shouldn't need to check this but we love safety.
 			if (array_key_exists('path', $pm_route)) {
-				$ls_method = $pm_route['path'];
+				$ls_route = $pm_route['path'];
+			}
+			else {
+				// Boy is my face red - see previous comment.
+				$this->add_error(array(
+					"Could not add route; route path not passed" => array(
+						'ps_method' => $ps_method
+					  , 'pm_route' => $pm_route
+					  , 'ps_endpoint' => $ps_endpoint
+					)
+				));
+				return false;
 			}
 
 			if (array_key_exists('version', $pm_route)) {
@@ -157,7 +198,7 @@ class Http {
 			}
 		}
 		else {
-			$ls_method = $ps_method;
+			$ls_route = $pm_route;
 		}
 		$ls_version = $ls_version ? $ls_version : '0.0.1'; //$_SERVER['Accept-Version']
 
@@ -170,7 +211,7 @@ class Http {
 			$this->endpoints[$ps_method][$ls_version] = array();
 		}
 
-		$this->endpoints[$ps_method][$ls_version][$pm_route] = $ps_endpoint;
+		$this->endpoints[$ps_method][$ls_version][$ls_route] = $ps_endpoint;
 		return true;
 	}
 
@@ -222,7 +263,14 @@ class Http {
 		return $this->add_http_route('DELETE', $pm_route, $ps_endpoint);
 	}
 
-	
+	/**
+	 * Locates the applicable route,
+	 * runs the endpoint
+	 * outputs appropriate headers
+	 * and json of result.
+	 *
+	 * @return Void
+	 */
 	function response () {
 		$lb_endpoint_reached = true;
 		$la_endpoint_result = array();
@@ -252,7 +300,9 @@ class Http {
 				else {
 					$lb_endpoint_reached = false; 
 					
-					$this->add_error("Endpoint not added for: " . print_r($this->url_parts, true));
+					$this->add_error(array(
+						"Endpoint not added" => $this->url_parts
+					));
 				}
 
 
@@ -260,7 +310,9 @@ class Http {
 			else {
 				$lb_endpoint_reached = false; 
 				
-				$this->add_error("Route not added for: " . print_r($this->url_parts, true));
+				$this->add_error(array(
+					"Route not added" => $this->url_parts
+				));
 			}
 		}
 

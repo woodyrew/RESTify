@@ -2,7 +2,7 @@
 
 include '../restme.inc.php';
 
-$restme = new Restme\http();
+$restme = new Restme\Http();
 
 $restme->get('example/serial/:id', 'get');
 $restme->get('example/serial', 'get_all');

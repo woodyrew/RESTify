@@ -49,8 +49,8 @@ class Http {
 		$this->endpoint_class = new $ls_endpoint_name;
 
 		$this->method = strtoupper($_SERVER['REQUEST_METHOD']);
-		$this->true_method = (!empty($_SERVER['X-HTTP-Method-Override'])) ? strtoupper($_SERVER['X-HTTP-Method-Override']) : $this->method;
-		$this->version = (!empty($_SERVER['Accept-Version'])) ? $_SERVER['Accept-Version'] : '0.0.1';
+		$this->true_method = (!empty($_SERVER['X_HTTP_METHOD_OVERRIDE']) || !empty($_SERVER['HTTP_METHOD_OVERRIDE'])) ? strtoupper($_SERVER['X_HTTP_METHOD_OVERRIDE'] . $_SERVER['HTTP_METHOD_OVERRIDE']) : $this->method;
+		$this->version = (!empty($_SERVER['ACCEPT_VERSION']) || !empty($_SERVER['HTTP_ACCEPT_VERSION'])) ? $_SERVER['ACCEPT_VERSION'] . $_SERVER['HTTP_ACCEPT_VERSION'] : '0.0.1';
 
 		$this->query = $this->get_query();
 
@@ -302,7 +302,7 @@ class Http {
 					$lb_endpoint_reached = false; 
 					
 					$this->add_error(array(
-						"Endpoint not added" => $this->url_parts
+						"Endpoint not added" => $this
 					));
 				}
 
@@ -312,7 +312,8 @@ class Http {
 				$lb_endpoint_reached = false; 
 				
 				$this->add_error(array(
-					"Route not added" => $this->url_parts
+					"Route not added" => $this
+				  , "SERVER" => $_SERVER
 				));
 			}
 		}

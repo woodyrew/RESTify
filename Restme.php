@@ -45,7 +45,8 @@ class Http {
 		}
 		include $ls_endpoint_file_path;
 		//
-		$this->endpoint_class = new RestmeEndpoint\$ls_script_name;
+		$ls_endpoint_name = 'RestmeEndpoint\\' . $ls_script_name;
+		$this->endpoint_class = new $ls_endpoint_name;
 
 		$this->method = strtoupper($_SERVER['REQUEST_METHOD']);
 		$this->true_method = (!empty($_SERVER['X-HTTP-Method-Override'])) ? strtoupper($_SERVER['X-HTTP-Method-Override']) : $this->method;

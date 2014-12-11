@@ -6,7 +6,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,63 @@ class Http {
 	private $endpoints = array();
 	private $route_params = array();
 	private $error = array();
+	private $_responses = array(
+		100 => 'Continue',
+		101 => 'Switching Protocols',
+		102 => 'Processing',
+		200 => 'OK',
+		201 => 'Created',
+		202 => 'Accepted',
+		203 => 'Non-Authoritative Information',
+		204 => 'No Content',
+		205 => 'Reset Content',
+		206 => 'Partial Content',
+		207 => 'Multi-Status',
+		300 => 'Multiple Choices',
+		301 => 'Moved Permanently',
+		302 => 'Found',
+		303 => 'See Other',
+		304 => 'Not Modified',
+		305 => 'Use Proxy',
+		306 => 'Switch Proxy',
+		307 => 'Temporary Redirect',
+		400 => 'Bad Request',
+		401 => 'Unauthorized',
+		402 => 'Payment Required',
+		403 => 'Forbidden',
+		404 => 'Not Found',
+		405 => 'Method Not Allowed',
+		406 => 'Not Acceptable',
+		407 => 'Proxy Authentication Required',
+		408 => 'Request Timeout',
+		409 => 'Conflict',
+		410 => 'Gone',
+		411 => 'Length Required',
+		412 => 'Precondition Failed',
+		413 => 'Request Entity Too Large',
+		414 => 'Request-URI Too Long',
+		415 => 'Unsupported Media Type',
+		416 => 'Requested Range Not Satisfiable',
+		417 => 'Expectation Failed',
+		418 => 'I\'m a teapot',
+		422 => 'Unprocessable Entity',
+		423 => 'Locked',
+		424 => 'Failed Dependency',
+		425 => 'Unordered Collection',
+		426 => 'Upgrade Required',
+		449 => 'Retry With',
+		450 => 'Blocked by Windows Parental Controls',
+		500 => 'Internal Server Error',
+		501 => 'Not Implemented',
+		502 => 'Bad Gateway',
+		503 => 'Service Unavailable',
+		504 => 'Gateway Timeout',
+		505 => 'HTTP Version Not Supported',
+		506 => 'Variant Also Negotiates',
+		507 => 'Insufficient Storage',
+		509 => 'Bandwidth Limit Exceeded',
+		510 => 'Not Extended'
+	);
 
 	// Add all the variables used in the class.
 
@@ -36,18 +93,19 @@ class Http {
 		//
 		$la_script_name = explode('.', $la_script_name);
 		array_pop($la_script_name);
-		$ls_script_name = implode('.', $la_script_name);
+		$ls_script_name = ucfirst(implode('.', $la_script_name));
 
-		$ls_endpoint_file_path = './endpoint/' . $ls_script_name . '.inc.php';
+		$ls_endpoint_file_path = './endpoint/' . $ls_script_name . '.php';
 		if (!file_exists($ls_endpoint_file_path)) {
-			header('HTTP/1.1 500 Internal Server Error');
+			$this->set_http_response(500);
 			die(json_encode(array('error' => array("Cannot find corresponding endpoint file: $ls_endpoint_file_path")))); // Convert to json 
 		}
 		include $ls_endpoint_file_path;
-		//
+
 		$ls_endpoint_name = 'RestmeEndpoint\\' . $ls_script_name;
 		$this->endpoint_class = new $ls_endpoint_name;
 
+		$this->is_json = (array_key_exists('HTTP_ACCEPT', $_SERVER) && strpos($_SERVER['HTTP_ACCEPT'], 'json') !== false);
 		$this->method = strtoupper($_SERVER['REQUEST_METHOD']);
 		$this->true_method = (!empty($_SERVER['X_HTTP_METHOD_OVERRIDE']) || !empty($_SERVER['HTTP_METHOD_OVERRIDE'])) ? strtoupper($_SERVER['X_HTTP_METHOD_OVERRIDE'] . $_SERVER['HTTP_METHOD_OVERRIDE']) : $this->method;
 		$this->version = (!empty($_SERVER['ACCEPT_VERSION']) || !empty($_SERVER['HTTP_ACCEPT_VERSION'])) ? $_SERVER['ACCEPT_VERSION'] . $_SERVER['HTTP_ACCEPT_VERSION'] : '0.0.1';
@@ -63,11 +121,38 @@ class Http {
 	}
 
 	/**
+	 * Takes a response code and sets the correct header
+	 *
+	 * @access protected
+	 *
+	 * @param  integer $pi_response_code    HTTP response code
+	 * 
+	 * @return void
+	 */
+	protected function set_http_response ($pi_response_code) {
+		$ls_response_text = $this->_responses[$pi_response_code];
+		// Set response as header
+		header("HTTP/1.1 $pi_response_code $ls_response_text");
+	}
+
+	/**
 	 * Gets the appropriate query according to the method called
 	 *
 	 * @return [array]
 	 */
 	protected function get_query () {
+		$request_body = @file_get_contents('php://input', 'r');
+		// f_debug('request_body', $request_body);
+		if (!empty($request_body)) {
+			$lm_params = json_decode($request_body);
+			if (empty($lm_params)) {
+				parse_str($request_body, $lm_params);
+			}
+		}
+
+		if (!empty($lm_params)) {
+			return $lm_params;
+		}
 		switch ($this->method) {
 			case 'GET':
 				return $_GET;
@@ -79,15 +164,7 @@ class Http {
 
 			case 'DELETE':
 			case 'PUT':
-				// emulateHTTP is in use
-				if ($this->true_method !== $this->method) {
 					return $_POST;
-				}
-				else {
-					$request_body = @file_get_contents('php://input', 'r');
-					parse_str($request_body, $_PUT);
-					return $_PUT;
-				}
 				break;
 
 			default:
@@ -120,35 +197,39 @@ class Http {
 			$la_return_params = array();
 			
 			$la_route_pattern = explode('/', $ls_route_pattern);
+			// Test for array of route parameters
 			if (is_array($la_route_pattern)) {
 				$this->add_error(array("la_route_pattern" => $la_route_pattern));
-				foreach ($la_route_pattern as $ls_segment) {
-					$this->add_error(array("ls_segment" => $ls_segment));
-					if (is_array($la_url_parts) && count($la_url_parts)) {
-						$ls_param = array_shift($la_url_parts);
-						$this->add_error(array("ls_param" => $ls_param));
+				if (count($la_route_pattern) === count($la_url_parts)) {
+					// Loop through each of the required route segments
+					foreach ($la_route_pattern as $ls_segment) {
+						$this->add_error(array("ls_segment" => $ls_segment));
+						// If url parts is a populated array
+						if (is_array($la_url_parts) && count($la_url_parts)) {
+							// Shift the top url_part from the array
+							$ls_param = array_shift($la_url_parts);
+							$this->add_error(array("ls_param" => $ls_param));
 
-						if (preg_match('/^\:(.*)/', $ls_segment, $lm_segment_key)) {
-							$la_return_params[$lm_segment_key[1]] = $ls_param;
-						}
-						elseif ($ls_segment !== $ls_param) {
-							$this->add_error("Not matched!");
-							// Not matched
-							continue 2;
+							// Test to see if the segment is named parameter 
+							if (preg_match('/^\:(.*)/', $ls_segment, $lm_segment_key)) {
+								// Add that as a key/value pairing to the return params
+								$la_return_params[$lm_segment_key[1]] = $ls_param;
+							}
+							elseif ($ls_segment !== $ls_param) {
+								$this->add_error("Not matched!");
+								// Not matched
+								continue 2;
+							}
 						}
 					}
-					else {
-						// Would be good to put this in a function
-						// Also add any remaining url parts to key/value $la_return_params
-						$this->add_error(array("la_return_params" => $la_return_params));
-						$this->route_params = $la_return_params;
-						return $ls_endpoint;
-					}
+					$this->add_error(array("la_return_params" => $la_return_params));
+					$this->route_params = $la_return_params;
+					return $ls_endpoint;
 				}
-	
-				$this->add_error(array("la_return_params" => $la_return_params));
-				$this->route_params = $la_return_params;
-				return $ls_endpoint;
+				else {
+					$this->add_error('Counts do not match');
+					continue;
+				}
 			}
 		}
 		return false; //if not matched;
@@ -293,6 +374,7 @@ class Http {
 		if ($lb_endpoint_reached) {
 			// work out parameters (e.g. :id)
 			$lm_endpoint = $this->get_endpoint_from_route();
+
 			if ($lm_endpoint !== false) {
 				if (method_exists($this->endpoint_class, $lm_endpoint)) {
 					// call endpoint
@@ -317,17 +399,22 @@ class Http {
 				));
 			}
 		}
-
 		header('Content-Type: application/json');
 		// not matched:
 		if (!$lb_endpoint_reached) {
-			header('HTTP/1.0 404 Not Found');
+			$this->set_http_response(404);
 			echo json_encode($this->error);
 			exit();
 		}
-		//echo json_encode($this);
 		// check endpoint return (should be array)
 		if (is_array($la_endpoint_result) && !empty($la_endpoint_result)) {
+			// Check to see if a specific http response was returned
+			if (array_key_exists('response', $la_endpoint_result) && array_key_exists('data', $la_endpoint_result) && array_key_exists($la_endpoint_result['response'], $this->_responses)) {
+				$response_key = $la_endpoint_result['response'];
+				$this->set_http_response($response_key);
+				// Redefine endpoint result as data
+				$la_endpoint_result = $la_endpoint_result['data'];
+			}
 			// echo json out
 			echo json_encode($la_endpoint_result);
 		}

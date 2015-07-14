@@ -35,7 +35,7 @@ The second parameter is a string name of the endpoint method, this file should b
 
 
 ### Endpoints class file
-./api/endpoints/book.inc.php
+./api/endpoints/Book.php
 ```php
 <?php
 

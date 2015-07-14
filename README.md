@@ -79,6 +79,17 @@ To access the [resource][what-is-a-resource], the path would be something like:
  > http://example.com/api/book/serial/12fds3
 That would get routed to the *get* method.
 
+#### My Resources All Result in 404?
+If you find that you're getting 404's when trying to access your api resources you may need to enable MultiViews for the directory.
+
+The simplest way to enable this would be to add an htaccess file to the api directory containing the following:
+
+```bash
+Options +MultiViews
+```
+
+A more elegant solution can be achieved with a Directory block in your Apache configuration.
+
 **Note:** *the [Clean url][what-are-clean-urls]*
 
 ## FAQ

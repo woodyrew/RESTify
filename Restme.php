@@ -107,7 +107,7 @@ class Http {
 
 		$this->is_json = (array_key_exists('HTTP_ACCEPT', $_SERVER) && strpos($_SERVER['HTTP_ACCEPT'], 'json') !== false);
 		$this->method = strtoupper($_SERVER['REQUEST_METHOD']);
-		$this->true_method = (!empty($_SERVER['X_HTTP_METHOD_OVERRIDE']) || !empty($_SERVER['HTTP_METHOD_OVERRIDE'])) ? strtoupper($_SERVER['X_HTTP_METHOD_OVERRIDE'] . $_SERVER['HTTP_METHOD_OVERRIDE']) : $this->method;
+		$this->true_method = $this->_get_true_method();
 		$this->version = (!empty($_SERVER['ACCEPT_VERSION']) || !empty($_SERVER['HTTP_ACCEPT_VERSION'])) ? $_SERVER['ACCEPT_VERSION'] . $_SERVER['HTTP_ACCEPT_VERSION'] : '0.0.1';
 
 		$this->query = $this->get_query();
@@ -133,6 +133,36 @@ class Http {
 		$ls_response_text = $this->_responses[$pi_response_code];
 		// Set response as header
 		header("HTTP/1.1 $pi_response_code $ls_response_text");
+	}
+
+	/**
+	 * Checks for method override and returns the it if found, otherwise returns the method type that
+	 * was originally retrieved. This allows for PUT/DELETE requests even though it's not truly supported
+	 * on our web servers.
+	 *
+	 * @access protected
+	 * @return	string	The true method type (GET/POST/PUT/DELETE)
+	 */
+	protected function _get_true_method () {
+		$la_possible_keys_for_method_retrieval = array(
+			'HTTP_X_HTTP_METHOD_OVERRIDE',
+			'X_HTTP_METHOD_OVERRIDE',
+			'HTTP_METHOD_OVERRIDE'
+		);
+
+		// By comparing the list of possible override keys with the keys present in the server superglobal, the correct
+		// override key can be retrieved.
+		$la_method_override = array_intersect($la_possible_keys_for_method_retrieval, array_keys($_SERVER));
+
+		// If an override method was found, return that value.
+		if (count($la_method_override)) {
+			reset($la_method_override);
+			$li_key_found = key($la_method_override);
+			return $_SERVER[$la_method_override[$li_key_found]];
+		};
+
+		// There is no override, return the original method.
+		return $this->method;
 	}
 
 	/**
@@ -224,6 +254,7 @@ class Http {
 					}
 					$this->add_error(array("la_return_params" => $la_return_params));
 					$this->route_params = $la_return_params;
+
 					return $ls_endpoint;
 				}
 				else {
@@ -414,6 +445,9 @@ class Http {
 				$this->set_http_response($response_key);
 				// Redefine endpoint result as data
 				$la_endpoint_result = $la_endpoint_result['data'];
+			}
+			else {
+				$this->set_http_response(200);
 			}
 			// echo json out
 			echo json_encode($la_endpoint_result);
